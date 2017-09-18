@@ -7,14 +7,18 @@ BUILD_ARGS := $(BUILD_ARGS)
 MAJOR := $(word 1,$(subst ., ,$(VERSION)))
 MINOR := $(word 2,$(subst ., ,$(VERSION)))
 MAJOR_MINOR_PATCH := $(word 1,$(subst -, ,$(VERSION)))
+NIGHTLY_VERSION := $(shell date +%m%d%Y>&1)
+LATEST_GECKODRIVER_URL := $(shell curl -s https://api.github.com/repos/mozilla/geckodriver/releases | grep browser_download_url | grep 'linux64.tar.gz' | head -n 1 | cut -d '"' -f 4 >&1)
+GECKODRIVER_VERSION := $(shell curl -s https://api.github.com/repos/mozilla/geckodriver/releases | grep tag_name | head -n 1 | cut -d '"' -f 4 | cut -d "v" -f 2 >&1)
 
-all: hub chrome firefox phantomjs chrome_debug firefox_debug standalone_chrome standalone_firefox standalone_chrome_debug standalone_firefox_debug
+all: hub chrome firefox firefox_nightly phantomjs chrome_debug firefox_debug standalone_chrome standalone_firefox standalone_chrome_debug standalone_firefox_debug
 
 generate_all:	\
 	generate_hub \
 	generate_nodebase \
 	generate_chrome \
 	generate_firefox \
+	generate_firefox_nightly \
 	generate_phantomjs \
 	generate_chrome_debug \
 	generate_firefox_debug \
@@ -53,6 +57,12 @@ generate_firefox:
 
 firefox: nodebase generate_firefox
 	cd ./NodeFirefox && docker build $(BUILD_ARGS) -t $(NAME)/node-firefox:$(VERSION) .
+
+generate_firefox_nightly:
+	cd ./NodeFirefoxNightly && ./generate.sh $(VERSION)
+
+firefox_nightly: nodebase generate_firefox_nightly
+	cd ./NodeFirefoxNightly && docker build $(BUILD_ARGS) --build-arg GECKODRIVER_URL=$(LATEST_GECKODRIVER_URL) -t $(NAME)/node-firefox-nightly:$(NIGHTLY_VERSION)-$(GECKODRIVER_VERSION) .
 
 generate_standalone_firefox:
 	cd ./Standalone && ./generate.sh StandaloneFirefox node-firefox Firefox $(VERSION) $(NAMESPACE) $(AUTHORS)
@@ -102,6 +112,7 @@ tag_latest:
 	docker tag $(NAME)/node-base:$(VERSION) $(NAME)/node-base:latest
 	docker tag $(NAME)/node-chrome:$(VERSION) $(NAME)/node-chrome:latest
 	docker tag $(NAME)/node-firefox:$(VERSION) $(NAME)/node-firefox:latest
+	docker tag $(NAME)/node-firefox-nightly:$(NIGHTLY_VERSION)-$(GECKODRIVER_VERSION) $(NAME)/node-firefox-nightly:latest
 	docker tag $(NAME)/node-phantomjs:$(VERSION) $(NAME)/node-phantomjs:latest
 	docker tag $(NAME)/node-chrome-debug:$(VERSION) $(NAME)/node-chrome-debug:latest
 	docker tag $(NAME)/node-firefox-debug:$(VERSION) $(NAME)/node-firefox-debug:latest
@@ -116,6 +127,7 @@ release_latest:
 	docker push $(NAME)/node-base:latest
 	docker push $(NAME)/node-chrome:latest
 	docker push $(NAME)/node-firefox:latest
+	docker push $(NAME)/node-firefox-nightly:latest
 	docker push $(NAME)/node-phantomjs:latest
 	docker push $(NAME)/node-chrome-debug:latest
 	docker push $(NAME)/node-firefox-debug:latest
@@ -243,12 +255,14 @@ test:
 	ci \
 	firefox \
 	firefox_debug \
+	firefox_nightly \
 	phantomjs \
 	generate_all \
 	generate_hub \
 	generate_nodebase \
 	generate_chrome \
 	generate_firefox \
+	generate_firefox_nightly \
 	generate_phantomjs \
 	generate_chrome_debug \
 	generate_firefox_debug \
