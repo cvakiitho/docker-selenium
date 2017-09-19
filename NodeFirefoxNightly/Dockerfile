@@ -25,8 +25,8 @@ RUN apt-get update -qqy \
 #============
 # GeckoDriver
 #============
-ARG GECKODRIVER_VERSION=latest
-ARG GECKODRIVER_URL
+ARG GECKODRIVER_VERSION=0.19.0
+ARG GECKODRIVER_URL=https://github.com/mozilla/geckodriver/releases/download/v$GECKODRIVER_VERSION/geckodriver-v$GECKODRIVER_VERSION-linux64.tar.gz
 
 RUN wget --no-verbose -O /tmp/geckodriver.tar.gz $GECKODRIVER_URL \
   && rm -rf /opt/geckodriver \
