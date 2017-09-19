@@ -51,8 +51,8 @@ ENV NODE_DOWN_POLLING_LIMIT 2
 # As string, maps to "applicationName"
 ENV NODE_APPLICATION_NAME ""
 
-COPY generate_config /opt/selenium/generate_config
-RUN chmod +x /opt/selenium/generate_config \
+COPY generate_config /opt/bin/generate_config
+RUN chmod +x /opt/bin/generate_config \
   && chown -R seluser:seluser /opt/selenium
 
 # Following line fixes
